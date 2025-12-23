@@ -1,121 +1,201 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Priorio</title>
+  <meta charset="UTF-8">
+  <title>Priorio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e3c72, #6a11cb, #e52d27);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
 
-<style>
-body {
-  margin: 0;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #1e3cff, #ff2d55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    .card {
+      background: rgba(255,255,255,0.15);
+      padding: 40px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
 
-.card {
-  width: 80%;
-  max-width: 700px;
-  padding: 40px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 20px;
-  color: white;
-}
+    h1 {
+      margin-top: 0;
+    }
 
-input {
-  width: 100%;
-  padding: 15px;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: none;
-  font-size: 16px;
-}
+    input {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+    }
 
-button {
-  padding: 12px 20px;
-  margin: 10px 10px 0 0;
-  border-radius: 10px;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-}
+    button {
+      padding: 12px 20px;
+      margin: 10px 5px 0 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+    }
 
-.primary { background: white; color: #1e3cff; }
-.google { background: white; color: black; }
+    .primary {
+      background: #ffffff;
+      color: #333;
+    }
 
-#error {
-  margin-top: 15px;
-  color: yellow;
-}
-</style>
+    .secondary {
+      background: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    hr {
+      margin: 25px 0;
+      opacity: 0.4;
+    }
+
+    #auth-error {
+      color: yellow;
+      margin-top: 10px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="card">
+<!-- 🔐 AUTH SCREEN -->
+<div id="auth-screen" class="card">
   <h1>Bienvenue sur Priorio</h1>
   <p>Concentre-toi sur l’essentiel.</p>
 
   <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
+  <input id="password" type="password" placeholder="Mot de passe (6 caractères min)">
 
-  <div>
-    <button class="primary" onclick="register()">Créer un compte</button>
-    <button class="primary" onclick="login()">Se connecter</button>
-  </div>
+  <button class="primary" onclick="register()">Créer un compte</button>
+  <button class="secondary" onclick="login()">Se connecter</button>
 
-  <hr style="margin:20px 0; opacity:0.3">
+  <hr>
 
-  <button class="google" onclick="googleLogin()">Se connecter avec Google</button>
+  <button class="primary" onclick="loginWithGoogle()">Se connecter avec Google</button>
 
-  <div id="error"></div>
+  <p id="auth-error"></p>
 </div>
 
-<script>
-  // 🔥 Firebase config
-  firebase.initializeApp({
+<!-- 🧠 APP SCREEN -->
+<div id="app-screen" class="card" style="display:none;">
+  <header>
+    <h1>Priorio</h1>
+    <button class="secondary" onclick="logout()">Déconnexion</button>
+  </header>
+
+  <h2>Tout ce que j’ai à faire</h2>
+  <input id="taskInput" placeholder="Écris tout ce qui te passe par la tête…">
+  <button class="primary" onclick="addTask()">Ajouter</button>
+
+  <h2>Mes priorités</h2>
+  <ul id="taskList"></ul>
+</div>
+
+<!-- 🔥 FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  const firebaseConfig = {
     apiKey: "AIzaSyD7Bstrypdg-Xgy1K1XeCuFVKJBNkAKPBU",
     authDomain: "priorio-e8ca2.firebaseapp.com",
-    projectId: "priorio-e8ca2"
+    projectId: "priorio-e8ca2",
+    storageBucket: "priorio-e8ca2.firebasestorage.app",
+    messagingSenderId: "907107431858",
+    appId: "1:907107431858:web:cf07bf003c1cee116c60ab"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  const authScreen = document.getElementById("auth-screen");
+  const appScreen = document.getElementById("app-screen");
+  const authError = document.getElementById("auth-error");
+
+  // 🔁 AUTO SWITCH UI
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      authScreen.style.display = "none";
+      appScreen.style.display = "block";
+    } else {
+      authScreen.style.display = "block";
+      appScreen.style.display = "none";
+    }
   });
 
-  const auth = firebase.auth();
-  const error = document.getElementById("error");
+  // 🔐 AUTH FUNCTIONS
+  window.register = () => {
+    authError.textContent = "";
+    createUserWithEmailAndPassword(auth, email.value, password.value)
+      .catch(e => authError.textContent = e.message);
+  };
 
-  function register() {
-    auth.createUserWithEmailAndPassword(
-      email.value,
-      password.value
-    ).then(() => {
-      alert("Compte créé !");
-    }).catch(e => error.innerText = e.message);
-  }
+  window.login = () => {
+    authError.textContent = "";
+    signInWithEmailAndPassword(auth, email.value, password.value)
+      .catch(e => authError.textContent = e.message);
+  };
 
-  function login() {
-    auth.signInWithEmailAndPassword(
-      email.value,
-      password.value
-    ).then(() => {
-      alert("Connecté !");
-    }).catch(e => error.innerText = e.message);
-  }
+  window.loginWithGoogle = () => {
+    authError.textContent = "";
+    signInWithPopup(auth, provider)
+      .catch(e => authError.textContent = e.message);
+  };
 
-  function googleLogin() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-      .then(() => alert("Connecté avec Google"))
-      .catch(e => error.innerText = e.message);
-  }
+  window.logout = () => signOut(auth);
+
+  // 📝 TASKS
+  window.addTask = () => {
+    const input = document.getElementById("taskInput");
+    if (!input.value) return;
+    const li = document.createElement("li");
+    li.textContent = input.value;
+    document.getElementById("taskList").appendChild(li);
+    input.value = "";
+  };
 </script>
 
 </body>
 </html>
+
 
 
 
