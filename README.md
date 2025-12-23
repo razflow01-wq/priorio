@@ -1,2 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Priorio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0a3cff, #ff2d2d);
+      color: white;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 30px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      margin-top: 40px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #0a3cff;
+    }
+
+    .btn-danger {
+      background: #ff2d2d;
+      color: white;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    .task {
+      background: rgba(255,255,255,0.2);
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .priority {
+      border: 2px solid gold;
+    }
+
+    progress {
+      width: 100%;
+      height: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container hidden" id="app">
+
+  <header>
+    <div>
+      <h1>Priorio</h1>
+      <p id="date"></p>
+    </div>
+    <button class="btn-danger" onclick="logout()">Déconnexion</button>
+  </header>
+
+  <hr>
+
+  <h2>🧠 Tout ce que j’ai à faire</h2>
+  <input id="taskInput" placeholder="Écris tout ce qui te passe par la tête, sans trier…">
+  <button class="btn-primary" onclick="addTask()">Ajouter</button>
+
+  <h2>📋 Tâches</h2>
+  <div id="tasks"></div>
+
+  <h2>🎯 Mes 3 priorités aujourd’hui</h2>
+  <div id="priorities"></div>
+
+  <h2>📈 Progression du jour</h2>
+  <progress id="progress" value="0" max="100"></progress>
+
+</div>
+
+<div class="container" id="login">
+  <h1>Bienvenue sur Priorio</h1>
+  <p>Concentre-toi sur l’essentiel.</p>
+  <button class="btn-primary" onclick="loginWithGoogle()">Se connecter avec Google</button>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD7Bstrypdg-Xgy1K1XeCuFVKJBNkAKPBU",
+    authDomain: "priorio-e8ca2.firebaseapp.com",
+    projectId: "priorio-e8ca2",
+    appId: "1:907107431858:web:cf07bf003c1cee116c60ab"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  }
+
+  function logout() {
+    auth.signOut();
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      loadTasks();
+    }
+  });
+
+  document.getElementById("date").innerText =
+    new Date().toLocaleDateString("fr-FR", { weekday:'long', day:'numeric', month:'long' });
+
+  let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+
+  function save() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    render();
+  }
+
+  function addTask() {
+    const text = taskInput.value.trim();
+    if (!text) return;
+
+    tasks.push({ text, priority:false, done:false });
+    taskInput.value = "";
+    save();
+  }
+
+  function togglePriority(i) {
+    if (tasks.filter(t => t.priority).length >= 3 && !tasks[i].priority) {
+      alert("Tu as déjà 3 priorités.");
+      return;
+    }
+    tasks[i].priority = !tasks[i].priority;
+    save();
+  }
+
+  function toggleDone(i) {
+    tasks[i].done = !tasks[i].done;
+    save();
+  }
+
+  function render() {
+    tasksDiv.innerHTML = "";
+    priorities.innerHTML = "";
+
+    let doneCount = 0;
+
+    tasks.forEach((t,i) => {
+      const div = document.createElement("div");
+      div.className = "task" + (t.priority ? " priority" : "");
+      div.innerHTML = `
+        <input type="checkbox" ${t.done?"checked":""} onchange="toggleDone(${i})">
+        ${t.text}
+        <button onclick="togglePriority(${i})">⭐</button>
+      `;
+      tasksDiv.appendChild(div);
+
+      if (t.priority) {
+        const p = document.createElement("div");
+        p.className = "task priority";
+        p.textContent = t.text;
+        priorities.appendChild(p);
+      }
+
+      if (t.done) doneCount++;
+    });
+
+    progress.value = tasks.length ? (doneCount / tasks.length) * 100 : 0;
+  }
+
+  function loadTasks() {
+    render();
+  }
+</script>
+
+</body>
+</html>
 # priorio
 Application de priorités quotidiennes pour se concentrer sur l’essentiel.
