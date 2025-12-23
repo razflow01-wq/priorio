@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Priorio</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #003cff, #ff2b2b);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* CONTAINERS */
+.box {
+  background: rgba(0,0,0,0.3);
+  padding: 40px;
+  border-radius: 20px;
+  width: 400px;
+  display: none;
+}
+
+.box.active {
+  display: block;
+}
+
+h1 {
+  text-align: center;
+  font-size: 42px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  font-size: 18px;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 20px;
+  font-size: 18px;
+  border-radius: 10px;
+  border: none;
+  background: #ff2b2b;
+  color: white;
+  cursor: pointer;
+}
+
+/* APP */
+.app {
+  width: 90%;
+  max-width: 1200px;
+  min-height: 90vh;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge {
+  background: white;
+  color: black;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox" class="box">
+  <h1>PRIORIO</h1>
+  <input id="loginEmail" placeholder="Email">
+  <input id="loginPass" type="password" placeholder="Mot de passe">
+  <button onclick="login()">Se connecter</button>
+  <button onclick="showRegister()">Créer un compte</button>
+</div>
+
+<!-- REGISTER -->
+<div id="registerBox" class="box">
+  <h1>Créer un compte</h1>
+  <input id="regEmail" placeholder="Email">
+  <input id="regPass" type="password" placeholder="Mot de passe">
+  <button onclick="register()">Créer</button>
+  <button onclick="showLogin()">Retour</button>
+</div>
+
+<!-- APP -->
+<div id="app" class="box app">
+
+<header>
+  <h1>PRIORIO</h1>
+  <div class="badge" onclick="logout()">Déconnexion</div>
+</header>
+
+<textarea id="input" placeholder="Écris tout ce qui te passe par la tête…"></textarea>
+<button onclick="addTask()">Ajouter</button>
+
+<div id="tasks"></div>
+
+</div>
+
+<script>
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem("priorioUsers")) || {};
+
+function saveUsers() {
+  localStorage.setItem("priorioUsers", JSON.stringify(users));
+}
+
+function showLogin() {
+  loginBox.classList.add("active");
+  registerBox.classList.remove("active");
+}
+
+function showRegister() {
+  registerBox.classList.add("active");
+  loginBox.classList.remove("active");
+}
+
+function register() {
+  const email = regEmail.value;
+  const pass = regPass.value;
+
+  if (!email || !pass) return alert("Champs requis");
+
+  if (users[email]) return alert("Compte déjà existant");
+
+  users[email] = { pass, tasks: [] };
+  saveUsers();
+  alert("Compte créé");
+  showLogin();
+}
+
+function login() {
+  const email = loginEmail.value;
+  const pass = loginPass.value;
+
+  if (!users[email] || users[email].pass !== pass) {
+    return alert("Identifiants incorrects");
+  }
+
+  currentUser = email;
+  localStorage.setItem("priorioCurrentUser", email);
+  startApp();
+}
+
+function logout() {
+  localStorage.removeItem("priorioCurrentUser");
+  location.reload();
+}
+
+function startApp() {
+  loginBox.classList.remove("active");
+  registerBox.classList.remove("active");
+  app.classList.add("active");
+}
+
+function addTask() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  users[currentUser].tasks.push(text);
+  saveUsers();
+  render();
+  input.value = "";
+}
+
+function render() {
+  tasks.innerHTML = "";
+  users[currentUser].tasks.forEach(t => {
+    const div = document.createElement("div");
+    div.textContent = t;
+    tasks.appendChild(div);
+  });
+}
+
+/* AUTO LOGIN */
+const savedUser = localStorage.getItem("priorioCurrentUser");
+if (savedUser && users[savedUser]) {
+  currentUser = savedUser;
+  startApp();
+  render();
+} else {
+  showLogin();
+}
+</script>
+
+</body>
+</html>
