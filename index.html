@@ -1,203 +1,221 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Priorio</title>
+  <meta charset="UTF-8">
+  <title>Priorio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #003cff, #ff2b2b);
-  color: white;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0a3cff, #ff2d2d);
+      color: white;
+      min-height: 100vh;
+    }
 
-/* CONTAINERS */
-.box {
-  background: rgba(0,0,0,0.3);
-  padding: 40px;
-  border-radius: 20px;
-  width: 400px;
-  display: none;
-}
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 30px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      margin-top: 40px;
+    }
 
-.box.active {
-  display: block;
-}
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-h1 {
-  text-align: center;
-  font-size: 42px;
-}
+    h1 {
+      margin: 0;
+    }
 
-input, textarea {
-  width: 100%;
-  padding: 15px;
-  margin-top: 15px;
-  font-size: 18px;
-  border-radius: 10px;
-  border: none;
-}
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-button {
-  width: 100%;
-  padding: 15px;
-  margin-top: 20px;
-  font-size: 18px;
-  border-radius: 10px;
-  border: none;
-  background: #ff2b2b;
-  color: white;
-  cursor: pointer;
-}
+    .btn-primary {
+      background: white;
+      color: #0a3cff;
+    }
 
-/* APP */
-.app {
-  width: 90%;
-  max-width: 1200px;
-  min-height: 90vh;
-}
+    .btn-danger {
+      background: #ff2d2d;
+      color: white;
+    }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+      font-size: 16px;
+    }
 
-.badge {
-  background: white;
-  color: black;
-  padding: 8px 15px;
-  border-radius: 20px;
-  cursor: pointer;
-}
-</style>
+    .task {
+      background: rgba(255,255,255,0.2);
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .priority {
+      border: 2px solid gold;
+    }
+
+    progress {
+      width: 100%;
+      height: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox" class="box">
-  <h1>PRIORIO</h1>
-  <input id="loginEmail" placeholder="Email">
-  <input id="loginPass" type="password" placeholder="Mot de passe">
-  <button onclick="login()">Se connecter</button>
-  <button onclick="showRegister()">Créer un compte</button>
-</div>
+<div class="container hidden" id="app">
 
-<!-- REGISTER -->
-<div id="registerBox" class="box">
-  <h1>Créer un compte</h1>
-  <input id="regEmail" placeholder="Email">
-  <input id="regPass" type="password" placeholder="Mot de passe">
-  <button onclick="register()">Créer</button>
-  <button onclick="showLogin()">Retour</button>
-</div>
+  <header>
+    <div>
+      <h1>Priorio</h1>
+      <p id="date"></p>
+    </div>
+    <button class="btn-danger" onclick="logout()">Déconnexion</button>
+  </header>
 
-<!-- APP -->
-<div id="app" class="box app">
+  <hr>
 
-<header>
-  <h1>PRIORIO</h1>
-  <div class="badge" onclick="logout()">Déconnexion</div>
-</header>
+  <h2>🧠 Tout ce que j’ai à faire</h2>
+  <input id="taskInput" placeholder="Écris tout ce qui te passe par la tête, sans trier…">
+  <button class="btn-primary" onclick="addTask()">Ajouter</button>
 
-<textarea id="input" placeholder="Écris tout ce qui te passe par la tête…"></textarea>
-<button onclick="addTask()">Ajouter</button>
+  <h2>📋 Tâches</h2>
+  <div id="tasks"></div>
 
-<div id="tasks"></div>
+  <h2>🎯 Mes 3 priorités aujourd’hui</h2>
+  <div id="priorities"></div>
+
+  <h2>📈 Progression du jour</h2>
+  <progress id="progress" value="0" max="100"></progress>
 
 </div>
+
+<div class="container" id="login">
+  <h1>Bienvenue sur Priorio</h1>
+  <p>Concentre-toi sur l’essentiel.</p>
+  <button class="btn-primary" onclick="loginWithGoogle()">Se connecter avec Google</button>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
-let currentUser = null;
-let users = JSON.parse(localStorage.getItem("priorioUsers")) || {};
+  const firebaseConfig = {
+    apiKey: "AIzaSyD7Bstrypdg-Xgy1K1XeCuFVKJBNkAKPBU",
+    authDomain: "priorio-e8ca2.firebaseapp.com",
+    projectId: "priorio-e8ca2",
+    appId: "1:907107431858:web:cf07bf003c1cee116c60ab"
+  };
 
-function saveUsers() {
-  localStorage.setItem("priorioUsers", JSON.stringify(users));
-}
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
-function showLogin() {
-  loginBox.classList.add("active");
-  registerBox.classList.remove("active");
-}
-
-function showRegister() {
-  registerBox.classList.add("active");
-  loginBox.classList.remove("active");
-}
-
-function register() {
-  const email = regEmail.value;
-  const pass = regPass.value;
-
-  if (!email || !pass) return alert("Champs requis");
-
-  if (users[email]) return alert("Compte déjà existant");
-
-  users[email] = { pass, tasks: [] };
-  saveUsers();
-  alert("Compte créé");
-  showLogin();
-}
-
-function login() {
-  const email = loginEmail.value;
-  const pass = loginPass.value;
-
-  if (!users[email] || users[email].pass !== pass) {
-    return alert("Identifiants incorrects");
+  function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
   }
 
-  currentUser = email;
-  localStorage.setItem("priorioCurrentUser", email);
-  startApp();
-}
+  function logout() {
+    auth.signOut();
+  }
 
-function logout() {
-  localStorage.removeItem("priorioCurrentUser");
-  location.reload();
-}
-
-function startApp() {
-  loginBox.classList.remove("active");
-  registerBox.classList.remove("active");
-  app.classList.add("active");
-}
-
-function addTask() {
-  const text = input.value.trim();
-  if (!text) return;
-
-  users[currentUser].tasks.push(text);
-  saveUsers();
-  render();
-  input.value = "";
-}
-
-function render() {
-  tasks.innerHTML = "";
-  users[currentUser].tasks.forEach(t => {
-    const div = document.createElement("div");
-    div.textContent = t;
-    tasks.appendChild(div);
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      loadTasks();
+    }
   });
-}
 
-/* AUTO LOGIN */
-const savedUser = localStorage.getItem("priorioCurrentUser");
-if (savedUser && users[savedUser]) {
-  currentUser = savedUser;
-  startApp();
-  render();
-} else {
-  showLogin();
-}
+  document.getElementById("date").innerText =
+    new Date().toLocaleDateString("fr-FR", { weekday:'long', day:'numeric', month:'long' });
+
+  let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+
+  function save() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    render();
+  }
+
+  function addTask() {
+    const text = taskInput.value.trim();
+    if (!text) return;
+
+    tasks.push({ text, priority:false, done:false });
+    taskInput.value = "";
+    save();
+  }
+
+  function togglePriority(i) {
+    if (tasks.filter(t => t.priority).length >= 3 && !tasks[i].priority) {
+      alert("Tu as déjà 3 priorités.");
+      return;
+    }
+    tasks[i].priority = !tasks[i].priority;
+    save();
+  }
+
+  function toggleDone(i) {
+    tasks[i].done = !tasks[i].done;
+    save();
+  }
+
+  function render() {
+    tasksDiv.innerHTML = "";
+    priorities.innerHTML = "";
+
+    let doneCount = 0;
+
+    tasks.forEach((t,i) => {
+      const div = document.createElement("div");
+      div.className = "task" + (t.priority ? " priority" : "");
+      div.innerHTML = `
+        <input type="checkbox" ${t.done?"checked":""} onchange="toggleDone(${i})">
+        ${t.text}
+        <button onclick="togglePriority(${i})">⭐</button>
+      `;
+      tasksDiv.appendChild(div);
+
+      if (t.priority) {
+        const p = document.createElement("div");
+        p.className = "task priority";
+        p.textContent = t.text;
+        priorities.appendChild(p);
+      }
+
+      if (t.done) doneCount++;
+    });
+
+    progress.value = tasks.length ? (doneCount / tasks.length) * 100 : 0;
+  }
+
+  function loadTasks() {
+    render();
+  }
 </script>
 
 </body>
 </html>
+
