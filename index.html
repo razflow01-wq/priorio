@@ -1,200 +1,184 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Priorio</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Priorio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #1e3c72, #6a11cb, #e52d27);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#1e3c72,#6a11cb,#e52d27);
+  color: white;
+  min-height: 100vh;
+}
 
-    .card {
-      background: rgba(255,255,255,0.15);
-      padding: 40px;
-      border-radius: 20px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    }
+#app {
+  display: flex;
+  min-height: 100vh;
+}
 
-    h1 {
-      margin-top: 0;
-    }
+nav {
+  width: 220px;
+  background: rgba(0,0,0,0.3);
+  padding: 20px;
+}
 
-    input {
-      width: 100%;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-    }
+nav h2 {
+  margin-top: 0;
+}
 
-    button {
-      padding: 12px 20px;
-      margin: 10px 5px 0 0;
-      border-radius: 10px;
-      border: none;
-      font-size: 15px;
-      cursor: pointer;
-    }
+nav button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
 
-    .primary {
-      background: #ffffff;
-      color: #333;
-    }
+main {
+  flex: 1;
+  padding: 40px;
+}
 
-    .secondary {
-      background: transparent;
-      color: white;
-      border: 2px solid white;
-    }
+.section {
+  display: none;
+}
 
-    hr {
-      margin: 25px 0;
-      opacity: 0.4;
-    }
+.section.active {
+  display: block;
+}
 
-    #auth-error {
-      color: yellow;
-      margin-top: 10px;
-    }
+input {
+  padding: 12px;
+  width: 100%;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 10px;
+}
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+button.primary {
+  background: white;
+  color: black;
+}
 
-    ul {
-      padding-left: 20px;
-    }
-
-    li {
-      margin: 8px 0;
-    }
-  </style>
+.card {
+  background: rgba(255,255,255,0.15);
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- 🔐 AUTH SCREEN -->
-<div id="auth-screen" class="card">
-  <h1>Bienvenue sur Priorio</h1>
-  <p>Concentre-toi sur l’essentiel.</p>
-
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe (6 caractères min)">
-
-  <button class="primary" onclick="register()">Créer un compte</button>
-  <button class="secondary" onclick="login()">Se connecter</button>
-
-  <hr>
-
-  <button class="primary" onclick="loginWithGoogle()">Se connecter avec Google</button>
-
-  <p id="auth-error"></p>
-</div>
-
-<!-- 🧠 APP SCREEN -->
-<div id="app-screen" class="card" style="display:none;">
-  <header>
+<!-- AUTH -->
+<div id="auth" style="display:flex;justify-content:center;align-items:center;height:100vh;">
+  <div class="card" style="width:400px;">
     <h1>Priorio</h1>
-    <button class="secondary" onclick="logout()">Déconnexion</button>
-  </header>
-
-  <h2>Tout ce que j’ai à faire</h2>
-  <input id="taskInput" placeholder="Écris tout ce qui te passe par la tête…">
-  <button class="primary" onclick="addTask()">Ajouter</button>
-
-  <h2>Mes priorités</h2>
-  <ul id="taskList"></ul>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Mot de passe">
+    <button class="primary" onclick="register()">Créer un compte</button>
+    <button onclick="login()">Se connecter</button>
+    <button onclick="loginWithGoogle()">Google</button>
+    <p id="error"></p>
+  </div>
 </div>
 
-<!-- 🔥 FIREBASE -->
+<!-- APP -->
+<div id="app" style="display:none;">
+  <nav>
+    <h2>Priorio</h2>
+    <button onclick="show('today')">🧠 Aujourd’hui</button>
+    <button onclick="show('tasks')">📋 Tâches</button>
+    <button onclick="show('profile')">👤 Profil</button>
+    <button onclick="show('settings')">⚙️ Paramètres</button>
+    <button onclick="logout()">🚪 Déconnexion</button>
+  </nav>
+
+  <main>
+    <div id="today" class="section active">
+      <h1>Aujourd’hui</h1>
+      <input id="taskInput" placeholder="Écris tout ce qui te passe par la tête…">
+      <button class="primary" onclick="addTask()">Ajouter</button>
+      <ul id="taskList"></ul>
+    </div>
+
+    <div id="tasks" class="section">
+      <h1>Toutes les tâches</h1>
+      <p>Bientôt disponible</p>
+    </div>
+
+    <div id="profile" class="section">
+      <h1>Mon profil</h1>
+      <div class="card">
+        <p><strong>Email :</strong> <span id="profileEmail"></span></p>
+        <p><strong>ID :</strong> <span id="profileUid"></span></p>
+      </div>
+    </div>
+
+    <div id="settings" class="section">
+      <h1>Paramètres</h1>
+      <p>Version 1.1</p>
+    </div>
+  </main>
+</div>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signInWithPopup,
-    GoogleAuthProvider,
-    onAuthStateChanged,
-    signOut
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyD7Bstrypdg-Xgy1K1XeCuFVKJBNkAKPBU",
-    authDomain: "priorio-e8ca2.firebaseapp.com",
-    projectId: "priorio-e8ca2",
-    storageBucket: "priorio-e8ca2.firebasestorage.app",
-    messagingSenderId: "907107431858",
-    appId: "1:907107431858:web:cf07bf003c1cee116c60ab"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyD7Bstrypdg-Xgy1K1XeCuFVKJBNkAKPBU",
+  authDomain: "priorio-e8ca2.firebaseapp.com",
+  projectId: "priorio-e8ca2",
+  appId: "1:907107431858:web:cf07bf003c1cee116c60ab"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-  const authScreen = document.getElementById("auth-screen");
-  const appScreen = document.getElementById("app-screen");
-  const authError = document.getElementById("auth-error");
+const authDiv = document.getElementById("auth");
+const appDiv = document.getElementById("app");
 
-  // 🔁 AUTO SWITCH UI
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      authScreen.style.display = "none";
-      appScreen.style.display = "block";
-    } else {
-      authScreen.style.display = "block";
-      appScreen.style.display = "none";
-    }
-  });
+onAuthStateChanged(auth, user => {
+  if (user) {
+    authDiv.style.display = "none";
+    appDiv.style.display = "flex";
+    profileEmail.textContent = user.email;
+    profileUid.textContent = user.uid;
+  } else {
+    authDiv.style.display = "flex";
+    appDiv.style.display = "none";
+  }
+});
 
-  // 🔐 AUTH FUNCTIONS
-  window.register = () => {
-    authError.textContent = "";
-    createUserWithEmailAndPassword(auth, email.value, password.value)
-      .catch(e => authError.textContent = e.message);
-  };
+window.register = () => createUserWithEmailAndPassword(auth,email.value,password.value).catch(e=>error.textContent=e.message);
+window.login = () => signInWithEmailAndPassword(auth,email.value,password.value).catch(e=>error.textContent=e.message);
+window.loginWithGoogle = () => signInWithPopup(auth,provider).catch(e=>error.textContent=e.message);
+window.logout = () => signOut(auth);
 
-  window.login = () => {
-    authError.textContent = "";
-    signInWithEmailAndPassword(auth, email.value, password.value)
-      .catch(e => authError.textContent = e.message);
-  };
+window.show = id => {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+};
 
-  window.loginWithGoogle = () => {
-    authError.textContent = "";
-    signInWithPopup(auth, provider)
-      .catch(e => authError.textContent = e.message);
-  };
-
-  window.logout = () => signOut(auth);
-
-  // 📝 TASKS
-  window.addTask = () => {
-    const input = document.getElementById("taskInput");
-    if (!input.value) return;
-    const li = document.createElement("li");
-    li.textContent = input.value;
-    document.getElementById("taskList").appendChild(li);
-    input.value = "";
-  };
+window.addTask = () => {
+  if (!taskInput.value) return;
+  const li = document.createElement("li");
+  li.textContent = taskInput.value;
+  taskList.appendChild(li);
+  taskInput.value = "";
+};
 </script>
 
 </body>
 </html>
+
 
 
 
