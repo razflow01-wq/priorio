@@ -14,9 +14,45 @@ body {
   min-height: 100vh;
 }
 
-#app {
+#auth, #app {
+  display: none;
+}
+
+#auth {
   display: flex;
-  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.card {
+  background: rgba(255,255,255,0.15);
+  padding: 30px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  padding: 12px;
+  margin-bottom: 10px;
+  width: 100%;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.primary {
+  background: white;
+  color: black;
 }
 
 nav {
@@ -25,22 +61,18 @@ nav {
   padding: 20px;
 }
 
-nav h2 {
-  margin-top: 0;
+nav button {
+  margin-bottom: 10px;
 }
 
-nav button {
-  width: 100%;
-  margin: 8px 0;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
+#app {
+  display: flex;
+  min-height: 100vh;
 }
 
 main {
   flex: 1;
-  padding: 40px;
+  padding: 30px;
 }
 
 .section {
@@ -51,24 +83,8 @@ main {
   display: block;
 }
 
-input {
-  padding: 12px;
-  width: 100%;
-  border-radius: 10px;
-  border: none;
-  margin-bottom: 10px;
-}
-
-button.primary {
-  background: white;
-  color: black;
-}
-
-.card {
-  background: rgba(255,255,255,0.15);
-  padding: 20px;
-  border-radius: 15px;
-  margin-bottom: 20px;
+ul {
+  padding-left: 20px;
 }
 </style>
 </head>
@@ -76,30 +92,34 @@ button.primary {
 <body>
 
 <!-- AUTH -->
-<div id="auth" style="display:flex;justify-content:center;align-items:center;height:100vh;">
-  <div class="card" style="width:400px;">
+<div id="auth">
+  <div class="card">
     <h1>Priorio</h1>
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Mot de passe">
+    <p>Concentre-toi sur l’essentiel</p>
+
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Mot de passe (6 caractères min)">
+
     <button class="primary" onclick="register()">Créer un compte</button>
     <button onclick="login()">Se connecter</button>
     <button onclick="loginWithGoogle()">Google</button>
+
     <p id="error"></p>
   </div>
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;">
+<div id="app">
   <nav>
     <h2>Priorio</h2>
-    <button onclick="show('today')">🧠 Aujourd’hui</button>
-    <button onclick="show('tasks')">📋 Tâches</button>
-    <button onclick="show('profile')">👤 Profil</button>
-    <button onclick="show('settings')">⚙️ Paramètres</button>
+    <button onclick="showSection('today')">🧠 Aujourd’hui</button>
+    <button onclick="showSection('profile')">👤 Profil</button>
+    <button onclick="showSection('settings')">⚙️ Paramètres</button>
     <button onclick="logout()">🚪 Déconnexion</button>
   </nav>
 
   <main>
+    <!-- TODAY -->
     <div id="today" class="section active">
       <h1>Aujourd’hui</h1>
       <input id="taskInput" placeholder="Écris tout ce qui te passe par la tête…">
@@ -107,29 +127,52 @@ button.primary {
       <ul id="taskList"></ul>
     </div>
 
-    <div id="tasks" class="section">
-      <h1>Toutes les tâches</h1>
-      <p>Bientôt disponible</p>
-    </div>
-
+    <!-- PROFILE -->
     <div id="profile" class="section">
       <h1>Mon profil</h1>
+
       <div class="card">
-        <p><strong>Email :</strong> <span id="profileEmail"></span></p>
-        <p><strong>ID :</strong> <span id="profileUid"></span></p>
+        <p><strong>Email :</strong> <span id="pEmail"></span></p>
+        <p><strong>ID :</strong> <span id="pUid"></span></p>
+        <p><strong>Connexion :</strong> <span id="pProvider"></span></p>
+        <p><strong>Créé le :</strong> <span id="pDate"></span></p>
+      </div>
+
+      <div class="card">
+        <h3>Mon objectif personnel</h3>
+        <input id="goalInput" placeholder="Ex : Me concentrer chaque jour">
+        <button class="primary" onclick="saveGoal()">Enregistrer</button>
       </div>
     </div>
 
+    <!-- SETTINGS -->
     <div id="settings" class="section">
       <h1>Paramètres</h1>
-      <p>Version 1.1</p>
+
+      <div class="card">
+        <button class="primary" onclick="resetDay()">Réinitialiser la journée</button>
+      </div>
+
+      <div class="card">
+        <p>Version : 1.1</p>
+        <p>Priorio © 2025</p>
+      </div>
     </div>
   </main>
 </div>
 
+<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD7Bstrypdg-Xgy1K1XeCuFVKJBNkAKPBU",
@@ -149,22 +192,36 @@ onAuthStateChanged(auth, user => {
   if (user) {
     authDiv.style.display = "none";
     appDiv.style.display = "flex";
-    profileEmail.textContent = user.email;
-    profileUid.textContent = user.uid;
+
+    pEmail.textContent = user.email;
+    pUid.textContent = user.uid;
+    pProvider.textContent = user.providerData[0].providerId;
+    pDate.textContent = new Date(user.metadata.creationTime).toLocaleDateString();
+
+    goalInput.value = localStorage.getItem("goal") || "";
   } else {
     authDiv.style.display = "flex";
     appDiv.style.display = "none";
   }
 });
 
-window.register = () => createUserWithEmailAndPassword(auth,email.value,password.value).catch(e=>error.textContent=e.message);
-window.login = () => signInWithEmailAndPassword(auth,email.value,password.value).catch(e=>error.textContent=e.message);
-window.loginWithGoogle = () => signInWithPopup(auth,provider).catch(e=>error.textContent=e.message);
+window.register = () =>
+  createUserWithEmailAndPassword(auth, email.value, password.value)
+    .catch(e => error.textContent = e.message);
+
+window.login = () =>
+  signInWithEmailAndPassword(auth, email.value, password.value)
+    .catch(e => error.textContent = e.message);
+
+window.loginWithGoogle = () =>
+  signInWithPopup(auth, provider)
+    .catch(e => error.textContent = e.message);
+
 window.logout = () => signOut(auth);
 
-window.show = id => {
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+window.showSection = id => {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
 };
 
 window.addTask = () => {
@@ -174,10 +231,22 @@ window.addTask = () => {
   taskList.appendChild(li);
   taskInput.value = "";
 };
+
+window.saveGoal = () => {
+  localStorage.setItem("goal", goalInput.value);
+  alert("Objectif enregistré");
+};
+
+window.resetDay = () => {
+  if (confirm("Réinitialiser la journée ?")) {
+    taskList.innerHTML = "";
+  }
+};
 </script>
 
 </body>
 </html>
+
 
 
 
